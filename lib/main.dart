@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:injectable/injectable.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:the_better_todolist/entities/todo.dart';
 import 'package:the_better_todolist/services/dependancy_injection/injectable_init.dart';
-import 'package:the_better_todolist/services/isar.dart';
 import 'package:the_better_todolist/services/todo_service.dart';
+import 'package:the_better_todolist/widgets/TaskBottomSheet.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await configureDependencies();
+  await dotenv.load(fileName: ".env");
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL'] ?? '',
+    anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
+  );
   runApp(const MyApp());
 }
 
@@ -23,23 +29,13 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home:  MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-   MyHomePage({super.key, required this.title});
-
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+  const MyHomePage({super.key, required this.title});
 
   final String title;
 
@@ -48,25 +44,21 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final TodoService todoService  = getIt<TodoService>();
-
-  List<Todo> initialTodos = [];
+  final TodoService todoService = getIt<TodoService>();
 
   @override
   void initState() {
-    _loadInitialData();
     super.initState();
   }
 
-  Future<void> _loadInitialData() async {
-    var todos = await todoService.getTodos();
-    setState(() {
-      initialTodos = todos;
-    });
-  }
-
-  void _incrementCounter() async {
-    await todoService.createTodo();
+  _handleClick(BuildContext context) {
+    showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: false,
+        builder: (BuildContext context) {
+          return const TaskBottomSheet();
+        });
   }
 
   @override
@@ -74,30 +66,24 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            _buildTodoStream()
-
-          ],
-        ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[_buildTodoStream()],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
+        onPressed: () => _handleClick(context),
+        tooltip: 'Add task',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+
   FutureBuilder<List<Todo>> _buildTodoStream() {
     return FutureBuilder<List<Todo>>(
       future: todoService.getTodos(), // Initial fetch
       builder: (context, snapshot) {
-
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CircularProgressIndicator();
         }
@@ -121,7 +107,6 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     );
   }
-
 
   Widget _buildListView(List<Todo> todos) {
     return Expanded(

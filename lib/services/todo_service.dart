@@ -1,27 +1,25 @@
 import 'package:injectable/injectable.dart';
-import 'package:isar/isar.dart';
 import 'package:the_better_todolist/entities/todo.dart';
-import 'package:the_better_todolist/services/isar.dart';
+import 'package:the_better_todolist/repository/base_repository.dart';
 
+abstract class ITodoService {
+  Future<Todo?> getTodo(int id);
+}
 
 @injectable
-class TodoService {
-  final IIsarService isarService;
+class TodoService<T> implements ITodoService {
+  final IBaseRepository<Todo> _todoRepository;
 
-  TodoService(this.isarService);
+  TodoService(this._todoRepository);
 
-  Future<void> createTodo() async  {
-    final db = isarService.db;
-    await db.writeTxn(()async =>
-        await db.todos.put(Todo("Hello", false))
-    );
-  }
+  Future<void> createTodo(List<Todo> todos) async =>
+      await _todoRepository.putAll(todos);
 
-  Future<List<Todo>> getTodos() async {
-    return await isarService.db.todos.where().findAll();
-  }
+  @override
+  Future<Todo?> getTodo(int id) async => await _todoRepository.getById(id);
 
-  Stream<List<Todo>> watchTodosCollection() {
-    return isarService.db.todos.watchLazy().asyncMap((event)async => await getTodos());
-  }
+  Future<List<Todo>> getTodos() async => await _todoRepository.getAll();
+
+  Stream<List<Todo>> watchTodosCollection() =>
+      _todoRepository.watch().asyncMap((event) async => await getTodos());
 }
