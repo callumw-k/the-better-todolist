@@ -1,5 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:the_better_todolist/services/dependancy_injection/injectable_init.dart';
+import 'package:the_better_todolist/services/todo_service.dart';
+
+showTaskBottomSheet(BuildContext context) {
+  showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      builder: (BuildContext context) {
+        return const TaskBottomSheet();
+      });
+}
 
 class TaskBottomSheet extends StatefulWidget {
   const TaskBottomSheet({super.key});
@@ -12,7 +23,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
   late FocusNode taskInputNode;
   final _inputKey = GlobalKey<FormState>();
   final _taskController = TextEditingController();
-  final supabase = Supabase.instance.client;
+  final TodoService todoService = getIt<TodoService>();
 
   @override
   void initState() {
@@ -49,7 +60,6 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
         child: TextFormField(
           controller: _taskController,
           autofocus: true,
-          keyboardAppearance: Brightness.dark,
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Please enter a task';
@@ -64,7 +74,7 @@ class _TaskBottomSheetState extends State<TaskBottomSheet> {
           onEditingComplete: () {},
           onFieldSubmitted: (value) async {
             if (_inputKey.currentState!.validate()) {
-              await supabase.from('todos').insert({'name': value});
+              await todoService.createTodo(value);
 
               if (!context.mounted) return;
 

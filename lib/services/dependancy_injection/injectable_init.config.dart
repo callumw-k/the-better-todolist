@@ -12,11 +12,9 @@
 import 'package:get_it/get_it.dart' as _i1;
 import 'package:injectable/injectable.dart' as _i2;
 
-import '../../entities/todo.dart' as _i5;
-import '../../repository/base_repository.dart' as _i4;
-import '../../repository/todo_repository.dart' as _i6;
+import '../../repository/todo_repository.dart' as _i4;
 import '../isar.dart' as _i3;
-import '../todo_service.dart' as _i7;
+import '../todo_service.dart' as _i5;
 
 extension GetItInjectableX on _i1.GetIt {
 // initializes the registration of main-scope dependencies inside of GetIt
@@ -33,10 +31,10 @@ extension GetItInjectableX on _i1.GetIt {
       () => _i3.IsarService.create(),
       preResolve: true,
     );
-    gh.factory<_i4.IBaseRepository<_i5.Todo>>(
-        () => _i6.TodoRepository(gh<_i3.IIsarService>()));
-    gh.factory<_i7.TodoService<dynamic>>(
-        () => _i7.TodoService<dynamic>(gh<_i4.IBaseRepository<_i5.Todo>>()));
+    gh.factory<_i4.TodoRepository>(
+        () => _i4.TodoRepositoryImpl(gh<_i3.IIsarService>()));
+    gh.factory<_i5.TodoService>(
+        () => _i5.TodoService(gh<_i4.TodoRepository>()));
     return this;
   }
 }

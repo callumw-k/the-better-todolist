@@ -38,4 +38,5 @@ abstract class BaseRepositoryImpl<T> implements IBaseRepository<T> {
       await _collection.putAll(items);
     });
   }
+
 }
