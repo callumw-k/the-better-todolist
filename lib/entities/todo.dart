@@ -28,20 +28,40 @@ class Todo {
   DateTime updatedAt;
   DateTime createdAt;
 
-  Todo(this.name, this.completed, this.createdAt, this.updatedAt);
+  @ignore
+  DateTime? deletedAt;
+
+  Todo({
+    required this.name,
+    required this.completed,
+    required this.createdAt,
+    required this.updatedAt,
+  });
 
   Map<String, dynamic> generateSupabaseTodo() => {
         'id': id,
         'name': name,
         'completed': completed,
         'created_at': createdAt.toUtc().toIso8601String(),
-        'updated_at': updatedAt.toUtc().toIso8601String()
+        'updated_at': updatedAt.toUtc().toIso8601String(),
       };
+
+  static Todo empty() {
+    return Todo(
+        name: '',
+        completed: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now())
+      ..id = '';
+  }
 
   Todo.fromMap(Map<String, dynamic> map)
       : id = map['id'],
         name = map['name'],
         completed = map['completed'],
+        deletedAt = map['deleted_at'] != null
+            ? DateTime.parse(map['deleted_at'])
+            : null,
         createdAt = DateTime.parse(map['created_at']),
         updatedAt = DateTime.parse(map['updated_at']);
 }

@@ -88,10 +88,10 @@ Todo _todoDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Todo(
-    reader.readString(offsets[3]),
-    reader.readBool(offsets[0]),
-    reader.readDateTime(offsets[1]),
-    reader.readDateTime(offsets[4]),
+    completed: reader.readBool(offsets[0]),
+    createdAt: reader.readDateTime(offsets[1]),
+    name: reader.readString(offsets[3]),
+    updatedAt: reader.readDateTime(offsets[4]),
   );
   object.id = reader.readString(offsets[2]);
   return object;

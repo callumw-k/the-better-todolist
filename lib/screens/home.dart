@@ -18,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
+    todoService.syncTodos();
     super.initState();
   }
 
@@ -25,7 +26,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Theme
+            .of(context)
+            .colorScheme
+            .inversePrimary,
         title: Text(widget.title),
       ),
       body: Column(
@@ -46,6 +50,10 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CircularProgressIndicator();
+        }
+
+        if (!snapshot.hasData) {
+          return const Text('No data');
         }
 
         if (snapshot.hasError) {

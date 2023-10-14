@@ -11,19 +11,69 @@ class TodoService {
 
   TodoService(this._todoRepository);
 
+  Future<List<Todo>> fetchTodos() async {
+    final List<Map<String, dynamic>> data =
+        await supabase.from('todos').select();
+    return data.map((e) => Todo.fromMap(e)).toList();
+  }
+
+  // TODO: this code sucks and needs a rewrite
+  Future<void> syncTodos() async {
+    var cloudTodos = await fetchTodos();
+    final localTodos = await _todoRepository.getAll();
+
+    for (var localTodo in localTodos) {
+      final cloudTodo = cloudTodos.firstWhere(
+        (cloudTodo) {
+          if (cloudTodo.id == localTodo.id) {
+            cloudTodos.remove(cloudTodo);
+            return true;
+          }
+          return false;
+        },
+        orElse: () => Todo.empty(),
+      );
+
+      if (cloudTodo.id.isEmpty) {
+        await createTodoInSupabase(localTodo);
+      } else if (cloudTodo.deletedAt != null) {
+        await _todoRepository.deleteAll([localTodo.id]);
+      } else if (cloudTodo.updatedAt.isAfter(localTodo.updatedAt)) {
+        await _todoRepository.putAll([cloudTodo]);
+      } else if (cloudTodo.updatedAt.isBefore(localTodo.updatedAt)) {
+        await supabase.from('todos').upsert(localTodo.generateSupabaseTodo());
+      }
+    }
+
+    final cloudTodosWithoutDeleted =
+        cloudTodos.where((e) => e.deletedAt == null).toList();
+
+    await _todoRepository.putAll(cloudTodosWithoutDeleted);
+  }
+
   Future<void> createTodo(String name) async {
     var currentIsoString = DateTime.now();
 
-    var todo = Todo(name, false, currentIsoString, currentIsoString);
+    var todo = Todo(
+      name: name,
+      completed: false,
+      createdAt: currentIsoString,
+      updatedAt: currentIsoString,
+    );
 
-    final List<Map<String, dynamic>> data = await supabase
-        .from('todos')
-        .insert(todo.generateSupabaseTodo())
-        .select();
+    final data = await createTodoInSupabase(todo);
+
     await _todoRepository.putAll(data.map((e) => Todo.fromMap(e)).toList());
   }
 
-  Future<Todo?> getTodo(int id) async {
+  Future<List<Map<String, dynamic>>> createTodoInSupabase(Todo todo) async {
+    return await supabase
+        .from('todos')
+        .insert(todo.generateSupabaseTodo())
+        .select();
+  }
+
+  Future<Todo?> getTodo(String id) async {
     return await _todoRepository.getById(id);
   }
 
